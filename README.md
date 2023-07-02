@@ -1,6 +1,6 @@
 # Raspberry Pi Pico Journey
 Welcome to my RPi Pico Journey !  
-I'll be a deep dive into the internals of this board.  
+It'll be a deep dive into the internals of this board.  
 
 The aim of this research is to learn about hardware, low level programming, etc.  
 
@@ -27,3 +27,5 @@ The aim of this research is to learn about hardware, low level programming, etc.
 - ARM Documentation
     - [Armv6-M Ref Manual](https://developer.arm.com/documentation/ddi0419/latest/)
     - [Cortex-M0+ Ref Manual](https://developer.arm.com/documentation/ddi0484/latest/)
+
+- [U2F File format](https://github.com/Microsoft/uf2)
