@@ -7,21 +7,28 @@ AOPS = --warn --fatal-warnings $(XCPU)
 COPS = -Wall -O2 -ffreestanding -nostartfiles $(XCPU)
 LOPS = -nostdlib 
 
-all : main.uf2
+all : main.uf2 clean
 
 clean:
 	rm -f *.bin
 	rm -f *.o
 	rm -f *.elf
 	rm -f *.list
-	rm -f *.uf2
 	rm -f u2f_converter
+
+upload: main.uf2 clean upload.sh
+	./upload.sh firmware.uf2
 	
 u2f_converter : u2f_converter.c
 	gcc -O2 u2f_converter.c -o u2f_converter
 	
 main.uf2 : main.bin u2f_converter
+ifdef loc
+	./u2f_converter $(loc) main.bin
+else
 	./u2f_converter flash main.bin
+endif
+	
 
 start.o : start.s
 	$(ARMGNU)-as $(AOPS) start.s -o start.o

@@ -46,38 +46,52 @@ void DELAY ( unsigned int );
 #define IO_BANK0_GPIO25_CTRL_SET    (IO_BANK0_BASE+0x0CC+0x2000)
 #define IO_BANK0_GPIO25_CTRL_CLR    (IO_BANK0_BASE+0x0CC+0x3000)
 
+void reset_preripheral(unsigned int peripheral){
+    PUT32(RESETS_RESET_CLR, peripheral);
+
+    // Wait for reset to be effective
+    while(1){
+        if( (GET32(RESETS_RESDONE_RW) & peripheral) != 0)
+            break;
+    }
+}
+
+void GPIO_enable(unsigned int gpio_nb){
+    // For most GPIO pins function 5 will connect the pin to SIO.
+    // The function is selected by writing to the FUNCSEL field in the GPIO’s CTRL register
+
+    //output disable
+    PUT32(SIO_GPIO_OE_CLR,1 << gpio_nb);
+    //turn off pin 25
+    PUT32(SIO_GPIO_OUT_CLR,1 << gpio_nb);
+
+    //set the function select to SIO (software controlled I/O)
+    PUT32(IO_BANK0_BASE+0x8*gpio_nb+4+0x0000,5);
+
+    //output enable
+    PUT32(SIO_GPIO_OE_SET,1 << gpio_nb);
+}
+
 // Goal: blink the led (GPIO25)
 void the_main(){
 
     // Before you can talk to the IO block we have to release reset.
-    PUT32(RESETS_RESET_CLR, RESET_IO_BANK0);
+    reset_preripheral(RESET_IO_BANK0);
 
-    // Wait for reset to be effective
-    while(1){
-        if( (GET32(RESETS_RESDONE_RW) & RESET_IO_BANK0) != 0)
-            break;
-    }
+    // Set GPIO25 to digital output
+    GPIO_enable(25);
 
-    // For most GPIO pins function 5 will connect the pin to SIO.
-    // The function is selected by writing to the FUNCSEL field in the GPIO’s CTRL register
-    
-     //output disable
-    PUT32(SIO_GPIO_OE_CLR,1<<25);
-    //turn off pin 25
-    PUT32(SIO_GPIO_OUT_CLR,1<<25);
-
-    //set the function select to SIO (software controlled I/O)
-    PUT32(IO_BANK0_GPIO25_CTRL_RW,5);
-
-    //output enable
-    PUT32(SIO_GPIO_OE_SET,1<<25);
+    GPIO_enable(16);
+     
     while(1)
     {
         //turn on the led
         PUT32(SIO_GPIO_OUT_SET,1<<25);
-        DELAY(0x10000);
+        PUT32(SIO_GPIO_OUT_SET,1<<16);
+        DELAY(0x100000);
         //turn off the led
         PUT32(SIO_GPIO_OUT_CLR,1<<25);
-        DELAY(0x10000);
+        PUT32(SIO_GPIO_OUT_CLR,1<<16);
+        DELAY(0x100000);
     }
 }
