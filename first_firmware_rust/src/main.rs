@@ -32,45 +32,81 @@ struct SIO_GPIO {
     pub oe_xor: u32,
 }
 
+fn put32(address: *mut u32, value: u32){
+    unsafe { core::ptr::write_volatile(address, value) };
+}
+
+fn get32(address: *mut u32) -> u32{
+    unsafe { core::ptr::read_volatile(address) }
+}
+
+fn reset_preripheral(peripheral: u32){
+    // ask for reset
+    let reset_clr = unsafe { &mut *((0x4000c000+0x3000) as *mut u32) };
+    put32(reset_clr, peripheral);
+
+    // Wait for reset to be effective
+    let resdone_rw = unsafe { &mut *((0x4000c000+0x8+0x0000) as *mut u32) };
+    let mut value = 0;
+    while (value & peripheral) == 0 {
+        value = get32(resdone_rw);
+    } 
+}
+
+fn gpio_enable(gpio_nb: u32) {
+    let sio = unsafe { &mut *(0xD0000000 as *mut SIO_GPIO) };
+
+    // disable output
+    put32(&mut sio.oe_clr, 1 << gpio_nb);
+    // turn gpio off
+    put32(&mut sio.out_clr, 1 << gpio_nb);
+    let gpio_25_fct = unsafe { &mut *((0x40014000+(0x8*gpio_nb)+4+0x0000) as *mut u32) };
+    // select alternative function to SIO (Software IO)
+    put32(gpio_25_fct, 5);
+    // enable output
+    put32(&mut sio.oe_set, 1 << gpio_nb);
+
+}
+
+fn gpio_high(gpio_nb: u32){
+    let sio = unsafe { &mut *(0xD0000000 as *mut SIO_GPIO) };
+    unsafe { core::ptr::write_volatile(&mut sio.out_set, 1 << gpio_nb) }; 
+}
+
+fn gpio_low(gpio_nb: u32){
+    let sio = unsafe { &mut *(0xD0000000 as *mut SIO_GPIO) };
+    unsafe { core::ptr::write_volatile(&mut sio.out_clr, 1 << gpio_nb) }; 
+}
+
+fn delay(cycle_nb: usize){
+    for _ in 0..cycle_nb {
+        asm::nop();
+    }
+}
+
 
 #[entry]
 fn main() -> ! {
     asm::nop(); // To not have main optimize to abort in release mode, remove when you add code
 
-    // Reset IO_BANK0
-    let reset_clr = unsafe { &mut *((0x4000c000+0x3000) as *mut u32) };
+    // Reset bank0
     let reset_io_bank0 = 1<< 5;
-    unsafe { core::ptr::write_volatile(reset_clr, reset_io_bank0) };
-
-    // Wait for reset to be effective
-    let resdone_rw = unsafe { &mut *((0x4000c000+0x8+0x0000) as *mut u32) };
-    let mut value = 0;
-    while (value & reset_io_bank0) == 0 {
-        value = unsafe { core::ptr::read_volatile(resdone_rw) };
-    } 
+    reset_preripheral(reset_io_bank0);
     
     // Enable gpio25
-    let sio = unsafe { &mut *(0xD0000000 as *mut SIO_GPIO) };
-    let gpio25 = 1 << 25;
-    unsafe { core::ptr::write_volatile(&mut sio.oe_clr, gpio25) }; //output disable
-    unsafe { core::ptr::write_volatile(&mut sio.out_clr, gpio25) }; //turn off pin 25
-    let gpio_25_fct = unsafe { &mut *((0x40014000+(0x8*25)+4+0x0000) as *mut u32) };
-    unsafe { core::ptr::write_volatile(gpio_25_fct, 5) }; //set the function select to SIO (software controlled I/O)
-    unsafe { core::ptr::write_volatile(&mut sio.oe_set, gpio25) }; //output enable
+    let led_gpio = 25;
+    gpio_enable(led_gpio);
 
+   
     loop {
-        // turn on
-        unsafe { core::ptr::write_volatile(&mut sio.out_set, gpio25) }; 
+        // turn led n
+        gpio_high(led_gpio);
     
-        for _ in 0..0x10000 {
-            asm::nop();
-        }
+        delay(0x10000);
 
-        // turn off
-        unsafe { core::ptr::write_volatile(&mut sio.out_clr, gpio25) }; 
+        // turn led off
+        gpio_low(led_gpio);
 
-        for _ in 0..0x10000 {
-            asm::nop();
-        }
+        delay(0x10000);
     }
 }
