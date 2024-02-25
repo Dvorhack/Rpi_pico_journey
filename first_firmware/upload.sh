@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 disk=$(lsblk -r -o NAME |grep sd.1)
 if [ -z $disk ]; then
@@ -11,7 +11,13 @@ if [ ! -f "$1" ]; then
     exit -1
 fi 
 
-mkdir -p /tmp/rasp
-sudo mount /dev/$disk /tmp/rasp || exit -1
+if [ $(whoami) == "root" ]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
 
-sudo cp "$1" /tmp/rasp
+mkdir -p /tmp/rasp
+$SUDO mount /dev/$disk /tmp/rasp || exit -1
+
+$SUDO cp "$1" /tmp/rasp

@@ -7,10 +7,10 @@ The aim of this research is to learn about hardware, low level programming, etc.
 ## Roadmap
 - [x] Find ressources
 - [x] HowTo build Toolchain
-- [ ] First Prog: Blink led
-    - [ ] LD Script
-    - [ ] C code
-- [ ] HowTo upload firmware
+- [x] Blink led in C
+- [x] Blink led in Rust
+- [ ] Use runner and build rust
+- [ ] Document bootloader 
 
 
 ## Ressources
@@ -29,3 +29,12 @@ The aim of this research is to learn about hardware, low level programming, etc.
     - [Cortex-M0+ Ref Manual](https://developer.arm.com/documentation/ddi0484/latest/)
 
 - [U2F File format](https://github.com/Microsoft/uf2)
+
+## Debug using flipper zero
+
+Install app [insert app] in flipper store
+
+Run the app and select pin `12, 13` as the UART pin
+
+`sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000"`
+
