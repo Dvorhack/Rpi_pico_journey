@@ -3,7 +3,7 @@
 all: compile
 
 upload: compile makeuf2
-	cargo objcopy --bin blink_rusp -- -O binary bin/main.bin
+	cargo objcopy --bin blink_rust -- -O binary bin/main.bin
 	./bin/makeuf2 bin/main.bin bin/binary.uf2
 	./upload.sh bin/binary.uf2
 
